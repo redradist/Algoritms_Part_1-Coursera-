@@ -5,9 +5,8 @@
  */
 
 import edu.princeton.cs.algs4.In;
-import edu.princeton.cs.algs4.StdDraw;
 import edu.princeton.cs.algs4.StdOut;
-import java.util.ArrayList;
+import edu.princeton.cs.algs4.MinPQ;
 import java.util.Iterator;
 
 /**
@@ -15,30 +14,145 @@ import java.util.Iterator;
  * @author REDRADIST
  */
 public class Solver {
+    private final int moves;
+    private PriorBoard prio, addprio;
+    private final boolean isSolvable;
+    
+        
+    private class IteratorBoard implements Iterator<Board> {
+        private int steps = 0;
+        private final PriorBoard prior;
+        
+        IteratorBoard(PriorBoard priority)
+        {
+            prior = priority;
+        }
+        
+        @Override
+        public boolean hasNext() {
+            return steps <= prior.moves;
+        }
+
+        @Override
+        public Board next() {
+            if (!hasNext()) return null;
+            PriorBoard temp = prior;
+            while (temp.moves != steps) temp = temp.last;
+            steps++;
+            return temp.board;
+        }
+        
+    }
+    
+    private class PriorBoard implements Comparable<PriorBoard> {
+        public Board board;
+        public PriorBoard iterator = null;
+        public PriorBoard last = null;
+        private int priority;
+        private int moves;
+        
+        PriorBoard(Board board, int moves)
+        {
+            this.board = board;
+            this.moves = moves;
+            priority = board.manhattan();
+            if (last != null)
+            {
+                priority += this.moves;
+            }
+        }
+        
+        public PriorBoard addNext(Board o) {
+            PriorBoard prio = new PriorBoard(o, moves+1);
+            prio.last = this;
+            prio.iterator = prio;
+            return prio;
+        }
+        
+        @Override
+        public int compareTo(PriorBoard o) {
+            if (priority == o.priority)
+            {
+                return 0;
+            }
+            else if (priority > o.priority)
+            {
+                return 1;
+            }
+            else
+            {
+                return -1;
+            }
+        }
+    }
+    
     public Solver(Board initial)
     {
-        
+        MinPQ<PriorBoard> queue;
+        MinPQ<PriorBoard> addqueue;
+        queue = new MinPQ<>();
+        addqueue = new MinPQ<>();
+        queue.insert(new PriorBoard(initial, 0));
+        prio = queue.delMin();
+        addqueue.insert(new PriorBoard(prio.board.twin(), 0));
+        addprio = addqueue.delMin();
+        while (!prio.board.isGoal())
+        {
+            if (addprio.board.isGoal())
+                break;
+            //--------------------------------------------------------------
+            Iterator<Board> iterator = prio.board.neighbors().iterator();
+            while (iterator.hasNext())
+            {
+                Board next = iterator.next();
+                if (prio.last == null || 
+                   (prio.last != null && !prio.last.board.equals(next)))
+                {
+                    PriorBoard nextStep = prio.addNext(next);
+                    queue.insert(nextStep);
+                }
+            }
+            prio = queue.delMin();
+            //--------------------------------------------------------------
+            Iterator<Board> additerator = addprio.board.neighbors().iterator();
+            while (additerator.hasNext())
+            {
+                Board next = additerator.next();
+                if (addprio.last == null || 
+                   (addprio.last != null && !addprio.last.board.equals(next)))
+                {
+                    PriorBoard nextStep = addprio.addNext(next);
+                    addqueue.insert(nextStep);
+                }
+            }
+            addprio = addqueue.delMin();
+        }
+        if (prio.board.isGoal())
+        {
+            isSolvable = true;
+            this.moves = prio.moves;
+        }
+        else
+        {
+            isSolvable = false;
+            this.moves = -1;
+        }
     }
     
     public boolean isSolvable()
     {
-        return true;
+        return isSolvable;
     }
     
     public int moves()
     {
-        return 1;
+        return moves;
     }
     
     public Iterable<Board> solution()
     {
-        return new Iterable<Board>() {
-
-            @Override
-            public Iterator<Board> iterator() {
-                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-            }
-        };
+        if (isSolvable()) return () -> new IteratorBoard(prio);
+        else return null;
     }
     
     public static void main(String[] args)
