@@ -56,10 +56,7 @@ public class Solver {
             this.board = board;
             this.moves = moves;
             priority = board.manhattan();
-            if (last != null)
-            {
-                priority += this.moves;
-            }
+            priority += this.moves;
         }
         
         public PriorBoard addNext(Board o) {
@@ -94,12 +91,20 @@ public class Solver {
         addqueue = new MinPQ<>();
         queue.insert(new PriorBoard(initial, 0));
         prio = queue.delMin();
-        addqueue.insert(new PriorBoard(prio.board.twin(), 0));
+        Board tinitial = prio.board.twin();
+        addqueue.insert(new PriorBoard(tinitial, 0));
         addprio = addqueue.delMin();
+        StdOut.println(prio.board);
+        StdOut.println(addprio.board);
         while (!prio.board.isGoal())
         {
             if (addprio.board.isGoal())
                 break;
+            //--------------------------------------------------------------
+            StdOut.println("Next prio:");
+            StdOut.println(prio.board);
+            StdOut.println("Next addprio:");
+            StdOut.println(addprio.board);
             //--------------------------------------------------------------
             Iterator<Board> iterator = prio.board.neighbors().iterator();
             while (iterator.hasNext())
@@ -126,6 +131,7 @@ public class Solver {
                 }
             }
             addprio = addqueue.delMin();
+            if(prio.board.equals(initial)) break;
         }
         if (prio.board.isGoal())
         {
