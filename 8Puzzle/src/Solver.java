@@ -15,28 +15,27 @@ import java.util.Iterator;
  */
 public class Solver {
     private final int moves;
-    private PriorBoard prio, addprio;
+    private PriorityBoard solving, additional;
     private final boolean isSolvable;
     
-        
     private class IteratorBoard implements Iterator<Board> {
         private int steps = 0;
-        private final PriorBoard prior;
+        private final PriorityBoard current;
         
-        IteratorBoard(PriorBoard priority)
+        IteratorBoard(PriorityBoard priority)
         {
-            prior = priority;
+            current = priority;
         }
         
         @Override
         public boolean hasNext() {
-            return steps <= prior.moves;
+            return steps <= current.moves;
         }
 
         @Override
         public Board next() {
             if (!hasNext()) return null;
-            PriorBoard temp = prior;
+            PriorityBoard temp = current;
             while (temp.moves != steps) temp = temp.last;
             steps++;
             return temp.board;
@@ -44,14 +43,13 @@ public class Solver {
         
     }
     
-    private class PriorBoard implements Comparable<PriorBoard> {
-        public Board board;
-        public PriorBoard iterator = null;
-        public PriorBoard last = null;
+    private class PriorityBoard implements Comparable<PriorityBoard> {
+        private Board board;
+        private PriorityBoard last = null;
         private int priority;
         private int moves;
         
-        PriorBoard(Board board, int moves)
+        PriorityBoard(Board board, int moves)
         {
             this.board = board;
             this.moves = moves;
@@ -59,15 +57,25 @@ public class Solver {
             priority += this.moves;
         }
         
-        public PriorBoard addNext(Board o) {
-            PriorBoard prio = new PriorBoard(o, moves+1);
-            prio.last = this;
-            prio.iterator = prio;
-            return prio;
+        public PriorityBoard addNext(Board next) {
+            if (last == null || !last.board.equals(next))
+            {
+                PriorityBoard nextBoard = new PriorityBoard(next, moves+1);
+                nextBoard.last = this;
+                return nextBoard;
+            }
+            else
+            {
+                return null;
+            }
+        }
+        
+        public Board getBoard() {
+            return board;
         }
         
         @Override
-        public int compareTo(PriorBoard o) {
+        public int compareTo(PriorityBoard o) {
             if (priority == o.priority)
             {
                 return 0;
@@ -85,58 +93,43 @@ public class Solver {
     
     public Solver(Board initial)
     {
-        MinPQ<PriorBoard> queue;
-        MinPQ<PriorBoard> addqueue;
-        queue = new MinPQ<>();
-        addqueue = new MinPQ<>();
-        queue.insert(new PriorBoard(initial, 0));
-        prio = queue.delMin();
-        Board tinitial = prio.board.twin();
-        addqueue.insert(new PriorBoard(tinitial, 0));
-        addprio = addqueue.delMin();
-        StdOut.println(prio.board);
-        StdOut.println(addprio.board);
-        while (!prio.board.isGoal())
+        MinPQ<PriorityBoard> solveQueue;
+        MinPQ<PriorityBoard> additionalQueue;
+        solveQueue = new MinPQ<>();
+        additionalQueue = new MinPQ<>();
+        solveQueue.insert(new PriorityBoard(initial, 0));
+        solving = solveQueue.delMin();
+        Board twinInitial = solving.getBoard().twin();
+        additionalQueue.insert(new PriorityBoard(twinInitial, 0));
+        additional = additionalQueue.delMin();
+        while (!solving.getBoard().isGoal())
         {
-            if (addprio.board.isGoal())
+            if (additional.getBoard().isGoal())
                 break;
-            //--------------------------------------------------------------
-            StdOut.println("Next prio:");
-            StdOut.println(prio.board);
-            StdOut.println("Next addprio:");
-            StdOut.println(addprio.board);
-            //--------------------------------------------------------------
-            Iterator<Board> iterator = prio.board.neighbors().iterator();
+            Iterator<Board> iterator = 
+                    solving.getBoard().neighbors().iterator();
             while (iterator.hasNext())
             {
                 Board next = iterator.next();
-                if (prio.last == null || 
-                   (prio.last != null && !prio.last.board.equals(next)))
-                {
-                    PriorBoard nextStep = prio.addNext(next);
-                    queue.insert(nextStep);
-                }
+                PriorityBoard nextStep = solving.addNext(next);
+                if (nextStep != null) solveQueue.insert(nextStep);
             }
-            prio = queue.delMin();
+            solving = solveQueue.delMin();
             //--------------------------------------------------------------
-            Iterator<Board> additerator = addprio.board.neighbors().iterator();
+            Iterator<Board> additerator = 
+                    additional.getBoard().neighbors().iterator();
             while (additerator.hasNext())
             {
                 Board next = additerator.next();
-                if (addprio.last == null || 
-                   (addprio.last != null && !addprio.last.board.equals(next)))
-                {
-                    PriorBoard nextStep = addprio.addNext(next);
-                    addqueue.insert(nextStep);
-                }
+                PriorityBoard nextStep = additional.addNext(next);
+                if (nextStep != null) additionalQueue.insert(nextStep);
             }
-            addprio = addqueue.delMin();
-            if(prio.board.equals(initial)) break;
+            additional = additionalQueue.delMin();
         }
-        if (prio.board.isGoal())
+        if (solving.getBoard().isGoal())
         {
             isSolvable = true;
-            this.moves = prio.moves;
+            this.moves = solving.moves;
         }
         else
         {
@@ -157,7 +150,7 @@ public class Solver {
     
     public Iterable<Board> solution()
     {
-        if (isSolvable()) return () -> new IteratorBoard(prio);
+        if (isSolvable()) return () -> new IteratorBoard(solving);
         else return null;
     }
     
