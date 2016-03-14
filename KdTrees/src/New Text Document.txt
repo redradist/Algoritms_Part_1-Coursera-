@@ -1,0 +1,74 @@
+                if((top.type == LineType.Vertical && top.item.x() == p.x()) ||
+                   (top.type == LineType.Horizontal && top.item.y() == p.y()))
+                {
+                    Point2D temp;
+                    temp = nearest(top.left, p, prenear);
+                    if(temp != null && temp.distanceTo(p) < prenear)
+                    {
+                        point = temp;
+                        prenear = temp.distanceTo(p);
+                    }
+                    temp = nearest(top.right, p, prenear);
+                    if(temp != null && temp.distanceTo(p) < prenear) point = temp;
+                }
+                else 
+				
+				
+				
+				
+				
+				
+				
+				
+				
+private Point2D nearest(Node top, Point2D p, double prenear)
+    {
+        if(top != null)
+        {
+            Point2D point = top.item;
+            double near = top.item.distanceTo(p);
+            if(near <= prenear)
+            {
+                Point2D temp;
+                temp = nearest(top.left, p, near);
+                if(temp != null && temp.distanceTo(p) < near)
+                {
+                    point = temp;
+                    near = temp.distanceTo(p);
+                }
+                temp = nearest(top.right, p, near);
+                if(temp != null && temp.distanceTo(p) < near) point = temp;
+            }
+            else
+            {
+                if((top.type == LineType.Vertical && top.item.x() > p.x()) ||
+                   (top.type == LineType.Horizontal && top.item.y() > p.y()))
+                {
+                    Point2D temp;
+                    temp = nearest(top.left, p, prenear);
+                    if(temp != null && temp.distanceTo(p) < prenear) point = temp;
+                    else
+                    {
+                        temp = nearest(top.right, p, prenear);
+                        if(temp != null && temp.distanceTo(p) < prenear) point = temp;
+                    }
+                }
+                else
+                {
+                    Point2D temp;
+                    temp = nearest(top.right, p, prenear);
+                    if(temp != null && temp.distanceTo(p) < prenear) point = temp;
+                    else
+                    {
+                        temp = nearest(top.left, p, prenear);
+                        if(temp != null && temp.distanceTo(p) < prenear) point = temp;
+                    }
+                }
+            }
+            return point;
+        }
+        else
+        {
+            return null;
+        }
+    }

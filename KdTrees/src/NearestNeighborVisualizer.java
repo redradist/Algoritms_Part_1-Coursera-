@@ -14,6 +14,7 @@
 import edu.princeton.cs.algs4.In;
 import edu.princeton.cs.algs4.Point2D;
 import edu.princeton.cs.algs4.StdDraw;
+import edu.princeton.cs.algs4.StdOut;
 
 public class NearestNeighborVisualizer {
 
@@ -50,14 +51,32 @@ public class NearestNeighborVisualizer {
             // draw in red the nearest neighbor (using brute-force algorithm)
             StdDraw.setPenRadius(.03);
             StdDraw.setPenColor(StdDraw.RED);
-            brute.nearest(query).draw();
+            Point2D pBrute = brute.nearest(query);
+            pBrute.draw();
             StdDraw.setPenRadius(.02);
 
             // draw in blue the nearest neighbor (using kd-tree algorithm)
             StdDraw.setPenColor(StdDraw.BLUE);
-            kdtree.nearest(query).draw();
+            Point2D pKdtree = kdtree.nearest(query);
+            pKdtree.draw();
             StdDraw.show(0);
             StdDraw.show(40);
+            if (pBrute.x() != pKdtree.x() ||
+                pBrute.y() != pKdtree.y())
+            {
+                StdOut.println("x = " + x + 
+                               ", y = " + y);
+                StdOut.println("pBrute.x = " + pBrute.x() + 
+                               ", pBrute.y = " + pBrute.y() + 
+                               ", pBrute.distance = " + 
+                                Math.sqrt(Math.pow(x-pBrute.x(), 2) + 
+                                          Math.pow(y-pBrute.y(), 2)));
+                StdOut.println("pKdtree.x = " + pKdtree.x() + 
+                               ", pKdtree.y = " + pKdtree.y() + 
+                               ", pKdtree.distance = " + 
+                                Math.sqrt(Math.pow(x-pKdtree.x(), 2) + 
+                                          Math.pow(y-pKdtree.y(), 2)));
+            }
         }
     }
 }

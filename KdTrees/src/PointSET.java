@@ -25,9 +25,9 @@ public class PointSET {
         PointIterator(RectHV rect)
         {
             iterator = new LinkedList<>();
-            for(Point2D point : set)
+            for (Point2D point : set)
             {
-                if(rect.contains(point)) iterator.add(point);
+                if (rect.contains(point)) iterator.add(point);
             }
             next = 0;
         }
@@ -70,7 +70,7 @@ public class PointSET {
     
     public void draw()
     {
-        for(Point2D point : set)
+        for (Point2D point : set)
         {
             point.draw();
         }
@@ -78,18 +78,19 @@ public class PointSET {
     
     public Iterable<Point2D> range(RectHV rect)
     {
-        if(set == null) return null;
+        if (set == null) return null;
         else return () -> new PointIterator(rect);
     }
     
     public Point2D nearest(Point2D p)
     {
-        if(!set.isEmpty())
+        if (!set.isEmpty() && p != null)
         {
-            Point2D ceiling = set.ceiling(p);
-            Point2D floor = set.floor(p);
-            return (ceiling.distanceTo(p) > 
-                    floor.distanceTo(p)) ? floor : ceiling;
+            Point2D temp = null;
+            for (Point2D point : set)
+                if (temp == null) temp = point;
+                else if (point.distanceTo(p) < temp.distanceTo(p)) temp = point;
+            return temp;
         }
         else
         {

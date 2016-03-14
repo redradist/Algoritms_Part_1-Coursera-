@@ -15,9 +15,12 @@ import java.util.LinkedList;
  * @author REDRADIST
  */
 public class KdTree {
+    private int     size = 0;
     private Node    twodTree = null;
+    private double      best_distance = Double.POSITIVE_INFINITY;
+    private Point2D     best_point = null;
     
-    enum LineType
+    private enum LineType
     {
         Vertical,
         Horizontal
@@ -36,40 +39,42 @@ public class KdTree {
         }
         
         private void checkTree(Node top, RectHV rect) {
-             if(top != null)
+             if (top != null)
              {
-                if(top.type == LineType.Vertical)
+                if (top.type == LineType.Vertical)
                 {
-                    if(top.item.x() >= rect.xmin() &&
-                       top.item.x() <= rect.xmax())
+                    if (top.item.x() >= rect.xmin() &&
+                        top.item.x() < rect.xmax())
                     {
-                        if(rect.contains(top.item)) iterator.add(top.item);
+                        if (rect.contains(top.item)) iterator.add(top.item);
                         checkTree(top.left, rect);
                         checkTree(top.right, rect);
                     }
-                    else if(top.item.x() > rect.xmin())
+                    else if (top.item.x() >= rect.xmax())
                     {
+                        if (rect.contains(top.item)) iterator.add(top.item);
                         checkTree(top.left, rect);
                     }
-                    else if(top.item.x() < rect.xmax())
+                    else
                     {
                         checkTree(top.right, rect);
                     }
                 }
                 else
                 {
-                    if(top.item.y() >= rect.ymin()&&
-                       top.item.y() <= rect.ymax())
+                    if (top.item.y() >= rect.ymin()&&
+                        top.item.y() < rect.ymax())
                     {
-                        if(rect.contains(top.item)) iterator.add(top.item);
+                        if (rect.contains(top.item)) iterator.add(top.item);
                         checkTree(top.left, rect);
                         checkTree(top.right, rect);
                     }
-                    else if(top.item.y() > rect.ymin())
+                    else if (top.item.y() >= rect.ymax())
                     {
+                        if (rect.contains(top.item)) iterator.add(top.item);
                         checkTree(top.left, rect);
                     }
-                    else if(top.item.y() < rect.ymax())
+                    else
                     {
                         checkTree(top.right, rect);
                     }
@@ -84,7 +89,8 @@ public class KdTree {
         
         @Override
         public Point2D next() {
-            return iterator.get(next++);
+            if (next >= iterator.size()) return null;
+            else return iterator.get(next++);
         }
     }
     
@@ -92,21 +98,21 @@ public class KdTree {
     {
         Point2D     item;
         LineType    type;
-        Node        parent;
         Node        left;
         Node        right;
     }
     
     public void insert(Point2D p)
     {
-        if(twodTree == null)
+        if (p == null) return;
+        if (twodTree == null)
         {
             twodTree = new Node();
             twodTree.item = p;
             twodTree.type = LineType.Vertical;
-            twodTree.parent = null;
             twodTree.left = null;
             twodTree.right = null;
+            ++size;
         }
         else
         {
@@ -116,199 +122,155 @@ public class KdTree {
     
     private void add(Node top, Point2D p)
     {
-        Node temp;
-        if(top.type == LineType.Vertical)
+        if (top.item.compareTo(p) == 0) return;
+        if (top.type == LineType.Vertical)
         {
-            if(top.item.x() < p.x())
+            if (top.item.x() < p.x())
             {
-                if(top.right != null) 
+                if (top.right != null) 
                 {
                     add(top.right, p);
-                    return;
                 }
                 else
                 {
                     top.right = new Node();
-                    temp = top.right;
+                    top.right.item = p;
+                    top.right.type = LineType.Horizontal;
+                    top.right.left = null;
+                    top.right.right = null;
+                    ++size;
                 }
             }
             else
             {
-                if(top.left != null) 
+                if (top.left != null) 
                 {
                     add(top.left, p);
-                    return;
                 }
                 else
                 {
                     top.left = new Node();
-                    temp = top.left;
+                    top.left.item = p;
+                    top.left.type = LineType.Horizontal;
+                    top.left.left = null;
+                    top.left.right = null;
+                    ++size;
                 }
             }
-            temp.type = LineType.Horizontal;
         }
         else
         {
-            if(top.item.y() < p.y())
+            if (top.item.y() < p.y())
             {
-                if(top.right != null) 
+                if (top.right != null) 
                 {
                     add(top.right, p);
-                    return;
                 }
                 else
                 {
                     top.right = new Node();
-                    temp = top.right;
+                    top.right.item = p;
+                    top.right.type = LineType.Vertical;
+                    top.right.left = null;
+                    top.right.right = null;
+                    ++size;
                 }
             }
             else
             {
-                if(top.left != null) 
+                if (top.left != null) 
                 {
                     add(top.left, p);
-                    return;
                 }
                 else
                 {
                     top.left = new Node();
-                    temp = top.left;
+                    top.left.item = p;
+                    top.left.type = LineType.Vertical;
+                    top.left.left = null;
+                    top.left.right = null;
+                    ++size;
                 }
             }
-            temp.type = LineType.Vertical;
         }
-        
-        temp.parent = top;
-        temp.item = p;
-        temp.left = null;
-        temp.right = null;
     }
     
     public Point2D nearest(Point2D p)
     {
-        if(twodTree != null)
-        {
-            Point2D point = twodTree.item;
-            double near = twodTree.item.distanceTo(p);
-            if(twodTree.item.x() == p.x())
-            {
-                Point2D temp;
-                temp = nearest(twodTree.left, p, near);
-                if(temp != null && temp.distanceTo(p) < near) point = temp;
-                temp = nearest(twodTree.right, p, near);
-                if(temp != null && temp.distanceTo(p) < near) point = temp;
-            }
-            else if(twodTree.item.x() < p.x())
-            {
-                Point2D temp;
-                temp = nearest(twodTree.left, p, near);
-                if(temp != null && temp.distanceTo(p) < near) point = temp;
-            }
-            else
-            {
-                Point2D temp;
-                temp = nearest(twodTree.right, p, near);
-                if(temp != null && temp.distanceTo(p) < near) point = temp;
-            }
-            return point;
-        }
-        else
-        {
-            return null;
-        }
+        best_point = null;
+        best_distance = Double.POSITIVE_INFINITY;
+        RectHV rect = new RectHV(0, 
+                                 0, 
+                                 Double.POSITIVE_INFINITY, 
+                                 Double.POSITIVE_INFINITY);
+        near(twodTree, p, rect);
+        return best_point;
     }
     
-    private Point2D nearest(Node top, Point2D p, double prenear)
+    private void near(Node top, Point2D p, RectHV rect)
     {
-        if(top != null)
+        if (top != null)
         {
-            Point2D point = top.item;
-            double near = top.item.distanceTo(p);
-            if(near == prenear)
+            double dist_rect = rect.distanceTo(p);
+            double dist_point = top.item.distanceTo(p);
+            if (best_point == null)
             {
-                return point;
+                best_distance = dist_point;
+                best_point = top.item;
             }
-            else if(near < prenear)
+            
+            if (dist_rect > best_distance)
+                return;
+            
+            if (dist_point < best_distance)
             {
-                Point2D temp;
-                temp = nearest(top.left, p, near);
-                if(temp != null && temp.distanceTo(p) < near) point = temp;
-                temp = nearest(top.right, p, near);
-                if(temp != null && temp.distanceTo(p) < near) point = temp;
+                best_distance = dist_point;
+                best_point = top.item;
+            }
+            
+            RectHV left;
+            RectHV right;
+            if(top.type == LineType.Vertical)
+            {
+                left = new RectHV(rect.xmin(),rect.ymin(),top.item.x(),rect.ymax());
+                right = new RectHV(top.item.x(),rect.ymin(),rect.xmax(),rect.ymax());
             }
             else
             {
-                if(top.type == LineType.Vertical)
-                {
-                    if(top.item.x() == p.x())
-                    {
-                        Point2D temp;
-                        temp = nearest(top.left, p, prenear);
-                        if(temp != null && temp.distanceTo(p) < prenear) point = temp;
-                        temp = nearest(top.right, p, prenear);
-                        if(temp != null && temp.distanceTo(p) < prenear) point = temp;
-                    }
-                    else if(top.item.x() > p.x())
-                    {
-                        Point2D temp;
-                        temp = nearest(top.left, p, prenear);
-                        if(temp != null && temp.distanceTo(p) < prenear) point = temp;
-                    }
-                    else
-                    {
-                        Point2D temp;
-                        temp = nearest(top.right, p, prenear);
-                        if(temp != null && temp.distanceTo(p) < prenear) point = temp;
-                    }
-                }
-                else
-                {
-                    if(top.item.y() == p.y())
-                    {
-                        Point2D temp;
-                        temp = nearest(top.left, p, prenear);
-                        if(temp != null && temp.distanceTo(p) < prenear) point = temp;
-                        temp = nearest(top.right, p, prenear);
-                        if(temp != null && temp.distanceTo(p) < prenear) point = temp;
-                    }
-                    else if(top.item.y() > p.y())
-                    {
-                        Point2D temp;
-                        temp = nearest(top.left, p, prenear);
-                        if(temp != null && temp.distanceTo(p) < prenear) point = temp;
-                    }
-                    else
-                    {
-                        Point2D temp;
-                        temp = nearest(top.right, p, prenear);
-                        if(temp != null && temp.distanceTo(p) < prenear) point = temp;
-                    }
-                }
+                left = new RectHV(rect.xmin(),rect.ymin(),rect.xmax(),top.item.y());
+                right = new RectHV(rect.xmin(),top.item.y(),rect.xmax(),rect.ymax());
             }
-            return point;
-        }
-        else
-        {
-            return null;
+            
+            if((top.type == LineType.Vertical && top.item.x() >= p.x()) ||
+               (top.type == LineType.Horizontal && top.item.y() >= p.y()))
+            {
+                near(top.left, p, left);
+                near(top.right, p, right);
+            }
+            else
+            {
+                near(top.right, p, right);
+                near(top.left, p, left);
+            }
         }
     }
     
     public void draw()
     {
-        draw(twodTree);
+        paint(twodTree);
     }
     
-    private void draw(Node top)
+    private void paint(Node top)
     {
-        if(top != null)
+        if (top != null)
         {
-            if(top.left != null)
+            if (top.left != null)
             {
-                draw(top.left);
+                paint(top.left);
             }
-            if(top.right != null)
+            if (top.right != null)
             {
-                draw(top.right);
+                paint(top.right);
             }
             top.item.draw();
         }
@@ -316,7 +278,41 @@ public class KdTree {
     
     public Iterable<Point2D> range(RectHV rect)
     {
-        if(twodTree == null) return null;
-        else return () -> new PointIterator(rect);
+        return new Iterable<Point2D>() {
+
+            @Override
+            public Iterator<Point2D> iterator() {
+                return new PointIterator(rect);
+            }
+        };
+    }
+    
+    public boolean contains(Point2D point)
+    {
+        return nodeSize(twodTree, point);
+    }
+    
+    private boolean nodeSize(Node top, Point2D point)
+    {
+        if (top == null) return false;
+        if (top.item.compareTo(point) == 0) return true;
+        
+        boolean result;
+        if ((top.type == LineType.Vertical && top.item.x() < point.x()) ||
+            (top.type == LineType.Horizontal && top.item.y() < point.y())) 
+            result = nodeSize(top.right, point);
+        else 
+            result = nodeSize(top.left, point);
+        return result;
+    }
+    
+    public boolean isEmpty()
+    {
+        return twodTree == null;
+    }
+
+    public int size()
+    {
+        return size;
     }
 }
